@@ -1,0 +1,611 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>프롬프트 생성기</title>
+  <style>
+    :root{
+      --bg: #fff7f3;
+      --card: rgba(255,255,255,.65);
+      --stroke: rgba(0,0,0,.08);
+      --text: #1f2937;
+      --muted:#6b7280;
+      --pink:#ff7fb5;
+      --pink2:#ffb4d2;
+      --shadow: 0 18px 45px rgba(0,0,0,.08);
+      --radius: 22px;
+    }
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans KR", sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(1200px 600px at 20% 0%, rgba(255,127,181,.25), transparent 60%),
+        radial-gradient(1000px 600px at 80% 10%, rgba(255,180,210,.28), transparent 60%),
+        linear-gradient(180deg, #fff9f6, var(--bg));
+      min-height:100vh;
+      padding: 22px 14px 40px;
+    }
+
+    .wrap{
+      max-width: 980px;
+      margin: 0 auto;
+      display:flex;
+      flex-direction:column;
+      gap: 16px;
+    }
+
+    .card{
+      background: var(--card);
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    header.card{
+      padding: 18px 18px 14px;
+      position:relative;
+      overflow:hidden;
+    }
+    header .top{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap: 14px;
+      flex-wrap:wrap;
+    }
+    h1{
+      font-size: 22px;
+      margin: 0;
+      letter-spacing:-.3px;
+    }
+    .sub{
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .bubbles{
+      display:flex;
+      gap: 10px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+      margin-left:auto;
+    }
+    .bubble{
+      cursor:pointer;
+      user-select:none;
+      font-size: 13px;
+      line-height:1.25;
+      padding: 10px 12px;
+      border-radius: 18px;
+      background: rgba(255,255,255,.78);
+      border: 1px solid rgba(0,0,0,.06);
+      box-shadow: 0 10px 18px rgba(0,0,0,.06);
+      max-width: 270px;
+      position:relative;
+      transition: transform .12s ease, box-shadow .12s ease;
+    }
+    .bubble:hover{
+      transform: translateY(-1px);
+      box-shadow: 0 14px 24px rgba(0,0,0,.08);
+    }
+    .bubble:after{
+      content:"";
+      position:absolute;
+      bottom:-8px;
+      left: 18px;
+      width: 14px;
+      height: 14px;
+      background: rgba(255,255,255,.78);
+      border-left: 1px solid rgba(0,0,0,.06);
+      border-bottom: 1px solid rgba(0,0,0,.06);
+      transform: rotate(45deg);
+      border-bottom-left-radius: 4px;
+    }
+
+    main.card{ padding: 16px; }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+    @media (min-width: 860px){
+      .grid{ grid-template-columns: 1.05fr .95fr; }
+    }
+
+    label{
+      font-size: 13px;
+      color: var(--muted);
+      display:block;
+      margin: 0 0 8px;
+    }
+
+    .input, textarea, pre, select{
+      width:100%;
+      border-radius: 18px;
+      border: 1px solid rgba(0,0,0,.08);
+      background: rgba(255,255,255,.75);
+      box-shadow: inset 0 2px 0 rgba(255,255,255,.9);
+      outline:none;
+    }
+
+    .input{
+      padding: 12px 12px;
+      font-size: 14px;
+    }
+
+    textarea{
+      min-height: 160px;
+      padding: 12px 12px;
+      font-size: 14px;
+      resize: vertical;
+      line-height:1.45;
+    }
+
+    .row{
+      display:flex;
+      gap: 10px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+
+    .btn{
+      border:none;
+      cursor:pointer;
+      border-radius: 18px;
+      padding: 12px 14px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      background: linear-gradient(180deg, var(--pink), #ff4e99);
+      box-shadow: 0 14px 28px rgba(255,78,153,.28);
+      transition: transform .12s ease, filter .12s ease, opacity .12s ease;
+      white-space:nowrap;
+    }
+    .btn:hover{ transform: translateY(-1px); filter: brightness(1.02); }
+    .btn:disabled{ opacity:.55; cursor:not-allowed; transform:none; }
+
+    .ghost{
+      background: rgba(255,255,255,.78);
+      color: var(--text);
+      border: 1px solid rgba(0,0,0,.08);
+      box-shadow: 0 10px 20px rgba(0,0,0,.06);
+      font-weight: 700;
+    }
+
+    .hint{
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 6px;
+      line-height:1.35;
+    }
+
+    .resultBox{
+      padding: 12px;
+      border-radius: 18px;
+      border: 1px solid rgba(0,0,0,.08);
+      background: rgba(255,255,255,.72);
+      box-shadow: inset 0 2px 0 rgba(255,255,255,.9);
+      min-height: 260px;
+      overflow:auto;
+      white-space: pre-wrap;
+      line-height:1.5;
+      font-size: 14px;
+    }
+
+    .status{
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.75);
+      border: 1px solid rgba(0,0,0,.06);
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    select.input{
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      padding-right: 38px;
+      background-image:
+        linear-gradient(45deg, transparent 50%, rgba(0,0,0,.45) 50%),
+        linear-gradient(135deg, rgba(0,0,0,.45) 50%, transparent 50%);
+      background-position:
+        calc(100% - 18px) 50%,
+        calc(100% - 12px) 50%;
+      background-size: 6px 6px, 6px 6px;
+      background-repeat: no-repeat;
+    }
+
+    /* 5W1H grid */
+    .wgrid{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    @media (min-width: 520px){
+      .wgrid{ grid-template-columns: 1fr 1fr; }
+    }
+
+    .field{
+      display:flex;
+      flex-direction:column;
+      gap: 8px;
+    }
+
+    /* ✅ 추가: 5W1H 상단 라벨 */
+    .fhead{
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--muted);
+      padding: 0 2px;
+      letter-spacing: .2px;
+      text-transform: lowercase;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <!-- HEADER -->
+    <header class="card">
+      <div class="top">
+        <div>
+          <h1>프롬프트 생성기</h1>
+          <div class="sub">5W1H 기반 프롬프트 생성기입니다 ✨</div>
+        </div>
+
+        <div class="bubbles" aria-label="예시 프롬프트">
+          <div class="bubble" data-who="중소 제조업체(직원30명)"
+               data-what="친환경 포장재를 유럽 시장에 수출"
+               data-when="2026년 하반기부터 본격 수출 시작"
+               data-where="독일, 프랑스, 네덜란드를 1차 타겟"
+               data-why="EU의 플라스틱 규제 강화로 친환경 포장재 수요 급증"
+               data-how="현재 유통사 파트너십을 향한 B2B 판매">
+            5W1H 수출 전략
+          </div>
+
+          <div class="bubble" data-who="UX 라이터"
+               data-what="'프롬프트 생성기' 웹페이지 버튼 문구 10개 추천"
+               data-when="이번 주 내"
+               data-where="모바일/웹 모두"
+               data-why="클릭 전환율을 높이고 친근한 톤을 만들기 위해"
+               data-how="짧고 귀엽고 직관적인 문구로 제안">
+            UX 버튼 문구
+          </div>
+
+          <div class="bubble" data-who="초등 저학년 선생님"
+               data-what="5세 미만 어린이를 위한 5문장 동화 + 각 문장 그림 프롬프트"
+               data-when="오늘"
+               data-where="가정/유치원"
+               data-why="짧고 쉬운 문장으로 언어 자극을 주기 위해"
+               data-how="문장마다 1줄 그림 설명을 함께 제공">
+            동화 + 그림
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- BODY -->
+    <main class="card">
+      <div class="grid">
+        <!-- Left: Inputs -->
+        <section>
+          <div class="row" style="justify-content:space-between; margin-bottom:10px;">
+            <div class="pill">🧁프롬프트 생성기</div>
+          </div>
+
+          <div style="margin-bottom:12px;">
+            <label for="apiKey">OpenAI API Key</label>
+            <input class="input" id="apiKey" type="password" placeholder="sk-..." autocomplete="off" />
+          </div>
+
+          <div style="margin-bottom:12px;">
+            <label for="model">Model</label>
+            <select class="input" id="model">
+              <option value="">API Key 입력 후 모델을 불러옵니다</option>
+            </select>
+          </div>
+
+          <!-- ✅ 5W1H Inputs (라벨 + placeholder 정리 적용) -->
+          <div style="margin-bottom:12px;">
+            <label>5W1H 입력</label>
+            <div class="wgrid">
+              <div class="field">
+                <div class="fhead">who</div>
+                <input class="input" id="who" placeholder="예: 중소 제조업체(직원30명)" />
+              </div>
+
+              <div class="field">
+                <div class="fhead">what</div>
+                <input class="input" id="what" placeholder="예: 친환경 포장재를 유럽 시장에 수출" />
+              </div>
+
+              <div class="field">
+                <div class="fhead">when</div>
+                <input class="input" id="when" placeholder="예: 2026년 하반기부터 본격 수출 시작" />
+              </div>
+
+              <div class="field">
+                <div class="fhead">where</div>
+                <input class="input" id="where" placeholder="예: 독일, 프랑스, 네덜란드 1차 타겟" />
+              </div>
+
+              <div class="field">
+                <div class="fhead">why</div>
+                <input class="input" id="why" placeholder="예: EU 플라스틱 규제 강화로 수요 급증" />
+              </div>
+
+              <div class="field">
+                <div class="fhead">how</div>
+                <input class="input" id="how" placeholder="예: 유통사 파트너십 기반 B2B 판매" />
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-bottom:12px;">
+            <label for="prompt">프롬프트 입력 예시</label>
+            <textarea id="prompt" placeholder="5W1H를 채우면 자동으로 구성되며, 수정도 가능합니다."></textarea>
+          </div>
+
+          <div class="row">
+            <button class="btn" id="genBtn">결과 생성</button>
+            <button class="btn ghost" id="clearBtn" type="button">초기화</button>
+            <span class="status" id="statusText"></span>
+          </div>
+
+          <div class="hint" style="margin-top:10px;">
+            출력은 “카테고리별 순번”으로, <b>300~500자</b> 내로 제한되도록 요청합니다.
+          </div>
+        </section>
+
+        <!-- Right: Output -->
+        <section>
+          <label>OPENAI API 기반 결과</label>
+          <div class="resultBox" id="result">여기에 결과가 표시됩니다.</div>
+          <div class="hint" style="margin-top:10px;">
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const $ = (s) => document.querySelector(s);
+
+    const apiKeyEl = $("#apiKey");
+    const modelEl = $("#model");
+    const promptEl = $("#prompt");
+    const genBtn = $("#genBtn");
+    const clearBtn = $("#clearBtn");
+    const resultEl = $("#result");
+    const statusText = $("#statusText");
+    const connPill = $("#connPill");
+
+    // 5W1H elements
+    const whoEl = $("#who");
+    const whatEl = $("#what");
+    const whenEl = $("#when");
+    const whereEl = $("#where");
+    const whyEl = $("#why");
+    const howEl = $("#how");
+
+    function setLoading(isLoading){
+      genBtn.disabled = isLoading;
+      genBtn.textContent = isLoading ? "생성 중..." : "결과 생성";
+      if (isLoading) connPill.textContent = "상태: 요청 중";
+    }
+
+    function extractText(data){
+      if (!data) return "";
+      if (typeof data.output_text === "string" && data.output_text.trim()) return data.output_text;
+
+      const out = [];
+      const output = Array.isArray(data.output) ? data.output : [];
+      for (const item of output){
+        const content = Array.isArray(item.content) ? item.content : [];
+        for (const c of content){
+          if (c && typeof c.text === "string") out.push(c.text);
+          if (c && typeof c.output_text === "string") out.push(c.output_text);
+        }
+      }
+      return out.join("\n").trim();
+    }
+
+    // ✅ 5W1H -> Markdown prompt builder (요청하신 순서대로)
+    function buildMarkdownPrompt(){
+      const who = (whoEl.value || "").trim();
+      const what = (whatEl.value || "").trim();
+      const when = (whenEl.value || "").trim();
+      const where = (whereEl.value || "").trim();
+      const why = (whyEl.value || "").trim();
+      const how = (howEl.value || "").trim();
+
+      return `아래 입력을 바탕으로 결과를 생성하세요.
+
+#입력
+[who] = ${who || "(미입력)"}
+[what] = ${what || "(미입력)"}
+[when] = ${when || "(미입력)"}
+[where] = ${where || "(미입력)"}
+[why] = ${why || "(미입력)"}
+[how] = ${how || "(미입력)"}
+
+#출력
+- 반드시 한국어로 작성
+- 전체 분량은 공백 포함 300~500자
+- 카테고리별로 순번을 붙여 출력 (예: 1) Who 2) What ... 형태)
+- 각 카테고리는 1~2문장으로 간결하게
+- 불필요한 서론/면책/메타설명 없이 결과만 출력`;
+    }
+
+    function syncPromptFrom5W1H(){
+      promptEl.value = buildMarkdownPrompt();
+    }
+
+    // 5W1H 입력 시 자동으로 prompt 구성
+    [whoEl, whatEl, whenEl, whereEl, whyEl, howEl].forEach(el => {
+      el.addEventListener("input", () => {
+        syncPromptFrom5W1H();
+      });
+    });
+
+    // Example bubbles -> fill 5W1H then prompt
+    document.querySelectorAll(".bubble").forEach(b => {
+      b.addEventListener("click", () => {
+        whoEl.value = b.dataset.who || "";
+        whatEl.value = b.dataset.what || "";
+        whenEl.value = b.dataset.when || "";
+        whereEl.value = b.dataset.where || "";
+        whyEl.value = b.dataset.why || "";
+        howEl.value = b.dataset.how || "";
+        syncPromptFrom5W1H();
+        promptEl.focus();
+      });
+    });
+
+    clearBtn.addEventListener("click", () => {
+      whoEl.value = "";
+      whatEl.value = "";
+      whenEl.value = "";
+      whereEl.value = "";
+      whyEl.value = "";
+      howEl.value = "";
+
+      promptEl.value = "";
+      resultEl.textContent = "여기에 결과가 표시됩니다.";
+      statusText.textContent = "";
+      connPill.textContent = "상태: 대기";
+    });
+
+    async function loadModels(){
+      const apiKey = (apiKeyEl.value || "").trim();
+      if (!apiKey) return;
+
+      try{
+        connPill.textContent = "상태: 모델 불러오는 중";
+        statusText.textContent = "";
+
+        modelEl.innerHTML = `<option value="">모델 불러오는 중...</option>`;
+
+        const res = await fetch("https://api.openai.com/v1/models", {
+          method: "GET",
+          headers: { "Authorization": `Bearer ${apiKey}` }
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok){
+          const msg = data?.error?.message || "모델 목록 불러오기 실패";
+          throw new Error(msg);
+        }
+
+        const models = (data.data || [])
+          .map(m => m.id)
+          .filter(id => typeof id === "string" && id.includes("gpt"))
+          .sort();
+
+        modelEl.innerHTML = "";
+
+        if (models.length === 0){
+          modelEl.innerHTML = `<option value="">사용 가능한 GPT 모델이 없습니다</option>`;
+        } else {
+          for (const id of models){
+            const opt = document.createElement("option");
+            opt.value = id;
+            opt.textContent = id;
+            modelEl.appendChild(opt);
+          }
+          if (models.includes("gpt-4o-mini")) modelEl.value = "gpt-4o-mini";
+          else modelEl.value = models[0];
+        }
+
+        connPill.textContent = "상태: 모델 준비 완료";
+      }catch(err){
+        modelEl.innerHTML = `<option value="">모델 로드 실패</option>`;
+        connPill.textContent = "상태: 오류";
+        statusText.textContent = "오류: " + (err?.message || "알 수 없는 오류");
+      }
+    }
+
+    // API Key 입력 후 모델 자동 로딩
+    apiKeyEl.addEventListener("change", loadModels);
+    apiKeyEl.addEventListener("blur", loadModels);
+
+    genBtn.addEventListener("click", async () => {
+      const apiKey = (apiKeyEl.value || "").trim();
+      const model = (modelEl.value || "").trim();
+      const prompt = buildMarkdownPrompt();
+
+      if (!apiKey){
+        statusText.textContent = "API Key를 입력해 주세요.";
+        return;
+      }
+      if (!model){
+        statusText.textContent = "모델을 선택해 주세요.";
+        return;
+      }
+
+      const allEmpty = [whoEl, whatEl, whenEl, whereEl, whyEl, howEl]
+        .every(el => !(el.value || "").trim());
+      if (allEmpty){
+        statusText.textContent = "5W1H 중 최소 1개는 입력해 주세요.";
+        return;
+      }
+
+      setLoading(true);
+      statusText.textContent = "";
+      resultEl.textContent = "생성 중입니다...";
+      connPill.textContent = "상태: 요청 중";
+
+      try{
+        const res = await fetch("https://api.openai.com/v1/responses", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({
+            model,
+            input: prompt
+          })
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok){
+          const msg = (data && data.error && data.error.message) ? data.error.message : "요청에 실패했습니다.";
+          throw new Error(msg);
+        }
+
+        const text = extractText(data) || "(텍스트 결과가 비어 있습니다. 입력을 바꿔 보세요.)";
+        resultEl.textContent = text;
+        connPill.textContent = "상태: 완료";
+      }catch(err){
+        resultEl.textContent = "";
+        statusText.textContent = "오류: " + (err?.message || "알 수 없는 오류");
+        connPill.textContent = "상태: 오류";
+      }finally{
+        setLoading(false);
+      }
+    });
+  </script>
+</body>
+</html>
