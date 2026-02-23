@@ -310,6 +310,8 @@
         <section>
           <div class="row" style="justify-content:space-between; margin-bottom:10px;">
             <div class="pill">🧁프롬프트 생성기</div>
+            <!-- ✅ 추가: Netlify 배포 후 JS 에러 방지용 상태 pill -->
+            <div class="pill" id="connPill">상태: 대기</div>
           </div>
 
           <div style="margin-bottom:12px;">
@@ -362,7 +364,7 @@
 
           <div style="margin-bottom:12px;">
             <label for="prompt">프롬프트 입력 예시</label>
-            <textarea id="prompt" placeholder="5W1H를 채우면 자동으로 구성되며, 수정도 가능합니다."></textarea>
+            <textarea id="prompt" placeholder="5W1H를 채우면 자동으로 구성되고, 수정도 가능합니다."></textarea>
           </div>
 
           <div class="row">
